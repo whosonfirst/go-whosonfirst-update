@@ -1,0 +1,117 @@
+#!/bin/sh
+
+OS=`uname -s | tr '[:upper:]' '[:lower:]'`
+
+PYTHON=`which python`
+WHOAMI=`${PYTHON} -c 'import os, sys; print os.path.realpath(sys.argv[1])' $0`
+
+BIN=`dirname ${WHOAMI}`
+ROOT=`dirname ${BIN}`
+
+UTILS="${ROOT}/utils/${OS}"
+
+LIST_REPOS="${UTILS}/wof-list-repos"
+BUILD_DIST="${UTILS}/wof-dist-build"
+PUBLISH_DIST="${UTILS}/wof-dist-publish"
+PRUNE_DIST="${UTILS}/wof-dist-prune"
+INDEX_DIST="${UTILS}/wof-dist-index"
+
+# read from... somewhere
+
+PUBLISHER="s3"
+
+S3_BUCKET=""
+S3_REGION=""
+S3_PREFIX=""
+S3_CREDENTIALS=""
+
+WORKDIR="/usr/local/data/dist"
+LOCKFILE="${WORKDIR}/.lock"
+
+SINCEFILE="/usr/local/data/dist.txt"
+SINCE="P1D"
+
+# end of read from somewhere
+
+if [ -f ${LOCKFILE} ]
+then
+    echo "lockfile '${LOCKFILE}' is present, exiting"
+    exit 1
+fi
+
+if [ -f ${SINCEFILE} ]
+then
+    SINCE=`cat ${SINCEFILE}`
+    echo "SINCE FROM SINCEFILE ${SINCE}"
+fi
+
+echo `date '+%s'` > ${SINCEFILE}
+
+rm -rf ${WORKDIR}/*
+echo `date` > ${LOCKFILE}
+
+TO_PUBLISH=$@
+
+if [ "$#" -eq 0 ]
+then
+    echo "publish all not-forked since ${SINCE}"
+    TO_PUBLISH=`${LIST_REPOS} -not-forked -updated-since ${SINCE}`
+fi
+
+if [ "$1" = "all" ]
+then
+    echo "publish all not-forked repos"    
+    TO_PUBLISH=`${LIST_REPOS} -not-forked`
+fi
+
+echo "publish '${TO_PUBLISH}'"
+
+for REPO in ${TO_PUBLISH}
+do
+    
+    echo "rebuild distributions for ${REPO}"
+    
+    ${BUILD_DIST} -workdir ${WORKDIR} -timings -verbose -build-meta -build-bundle ${REPO}
+
+    if [ $? -ne 0 ]
+    then
+	echo "rebuild failed for ${REPO}"
+	continue
+    fi
+       
+    echo "publish distributions for ${REPO}"
+    
+    ${PUBLISH_DIST} -workdir ${WORKDIR} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" ${REPO}
+
+    if [ $? -ne 0 ]
+    then
+	echo "publish failed for ${REPO}"
+	continue
+    fi
+    
+    echo "prune distributions"
+
+    ${PRUNE_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
+
+    if [ $? -ne 0 ]
+    then
+	echo "pruning failed"
+	continue
+    fi
+    
+    echo "index distributions"
+    
+    ${INDEX_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
+
+    if [ $? -ne 0 ]
+    then
+	echo "indexing failed"
+	continue
+    fi
+
+    rm -rf ${WORKDIR}/${REPO}*
+    
+done
+
+rm -f ${LOCKFILE}
+exit 0
