@@ -16,7 +16,20 @@ PUBLISH_DIST="${UTILS}/wof-dist-publish"
 PRUNE_DIST="${UTILS}/wof-dist-prune"
 INDEX_DIST="${UTILS}/wof-dist-index"
 
+for TOOL in $LIST_REPOS $BUILD_DIST $PUBLISH_DIST $PRUNE_DIST $INDEX_DIST
+do
+
+    if [ ! -x ${TOOL} ]
+    then
+	echo "Missing tool: '${TOOL}'"
+	exit 1
+    fi
+done
+
 # read from... somewhere
+# something something something config files...
+# https://stackoverflow.com/questions/6318809/how-do-i-grab-an-ini-value-within-a-shell-script
+# (20180821/thisisaaronland)
 
 PUBLISHER="s3"
 
