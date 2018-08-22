@@ -15,6 +15,7 @@ BUILD_DIST="${UTILS}/wof-dist-build"
 PUBLISH_DIST="${UTILS}/wof-dist-publish"
 PRUNE_DIST="${UTILS}/wof-dist-prune"
 INDEX_DIST="${UTILS}/wof-dist-index"
+INDEX_BUNDLES="${UTILS}/wof-bundles-index"
 
 for TOOL in $LIST_REPOS $BUILD_DIST $PUBLISH_DIST $PRUNE_DIST $INDEX_DIST
 do
@@ -125,6 +126,13 @@ do
     rm -rf ${WORKDIR}/${REPO}*
     
 done
+
+${INDEX_BUNDLES} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}"
+
+if [ $? -ne 0 ]
+then
+    echo "indexing bundles failed"
+fi
 
 rm -f ${LOCKFILE}
 exit 0
