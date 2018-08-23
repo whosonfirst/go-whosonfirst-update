@@ -1,8 +1,27 @@
 #!/bin/sh
 
+# for example:
+# /usr/local/whosonfirst/go-whosonfirst-update/bin//wof-update-distributions -b dist.whosonfirst.org -r us-east-2 -c iam:
+
+# would it be easiest just to fold all of this in to a single Go binary that uses
+# all the same code as the `wof-do-something` tools below? maybe...
+
 OS=`uname -s | tr '[:upper:]' '[:lower:]'`
 
 PYTHON=`which python`
+GETOPT=`which getopt`
+
+for TOOL in $PYTHON $GETOPT
+do
+
+    if [ ! -x ${TOOL} ]
+    then
+	echo "Missing tool: '${TOOL}'"
+	exit 1
+    fi
+    
+done
+
 WHOAMI=`${PYTHON} -c 'import os, sys; print os.path.realpath(sys.argv[1])' $0`
 
 BIN=`dirname ${WHOAMI}`
@@ -25,12 +44,8 @@ do
 	echo "Missing tool: '${TOOL}'"
 	exit 1
     fi
+    
 done
-
-# read from... somewhere
-# something something something config files...
-# https://stackoverflow.com/questions/6318809/how-do-i-grab-an-ini-value-within-a-shell-script
-# (20180821/thisisaaronland)
 
 PUBLISHER="s3"
 
@@ -41,11 +56,50 @@ S3_CREDENTIALS=""
 
 WORKDIR="/usr/local/data/dist"
 LOCKFILE="${WORKDIR}/.lock"
+SINCEFILE="${WORKDIR}.txt"
 
-SINCEFILE="/usr/local/data/dist.txt"
 SINCE="P1D"
 
-# end of read from somewhere
+ARGS=`${GETOPT} b:r:p:c:w:l:s: $*`
+set -- $ARGS
+
+for i; do
+    case "$i" in
+	-b  ) S3_BUCKET=$2
+	      shift; shift ;;
+	-r  ) S3_REGION=$2
+	      shift; shift  ;;
+	-p  ) S3_PREFIX=$2
+	      shift; shift ;;
+	-c  ) S3_CREDENTIALS=$2
+	      shift; shift ;;
+	-w  ) WORKDIR=$2
+	      shift; shift ;;
+	-l  ) LOCKFILE=$2
+	      shift; shift ;;
+	-s  ) SINCE=$2
+	      shift; shift;;
+	--  ) shift; break ;;
+    esac
+done
+
+if [ "${S3_BUCKET}" = "" ]
+then
+    echo "Missing S3 bucket config"
+    exit 1
+fi
+
+if [ "${S3_REGION}" = "" ]
+then
+    echo "Missing S3 region"
+    exit 1
+fi
+
+if [ "${S3_CREDENTIALS}" = "" ]
+then
+    echo "Missing S3 credentials"
+    exit 1
+fi
 
 if [ -f ${LOCKFILE} ]
 then
