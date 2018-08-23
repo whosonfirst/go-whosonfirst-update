@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # for example:
-# /usr/local/whosonfirst/go-whosonfirst-update/bin//wof-update-distributions -b dist.whosonfirst.org -r us-east-2 -c iam:
+# /usr/local/whosonfirst/go-whosonfirst-update/bin/wof-update-distributions -b dist.whosonfirst.org -r us-east-2 -c iam:
 
 # would it be easiest just to fold all of this in to a single Go binary that uses
 # all the same code as the `wof-do-something` tools below? maybe...
