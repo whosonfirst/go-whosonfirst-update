@@ -103,8 +103,12 @@ fi
 
 if [ -f ${LOCKFILE} ]
 then
+
+    # maybe test the age of LOCKFILE and continue anyway if > n ?
+    # (20180823/thisisaaronland)
+    
     echo "lockfile '${LOCKFILE}' is present, exiting"
-    exit 1
+    exit 0
 fi
 
 if [ -f ${SINCEFILE} ]
