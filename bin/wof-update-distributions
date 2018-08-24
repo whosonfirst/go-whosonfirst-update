@@ -185,7 +185,14 @@ do
     
 done
 
-${INDEX_BUNDLES} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}"
+BUNDLES_PREFIX="bundles"
+
+if [ "${S3_PREFIX}" != "" ]
+then
+    BUNDLES_PREFIX="${S3_PREFIX}/bundles"
+fi
+
+${INDEX_BUNDLES} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${BUNDLES_PREFIX} credentials=${S3_CREDENTIALS}"
 
 if [ $? -ne 0 ]
 then
