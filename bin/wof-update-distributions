@@ -47,8 +47,8 @@ do
     
 done
 
-GITHUB_ORG=""
-GITHUB_PREFIX=""
+GITHUB_ORG="whosonfirst-data"
+GITHUB_PREFIX="whosonfirst-data"
 
 PUBLISHER="s3"
 
@@ -64,6 +64,7 @@ LOCKFILE="${WORKDIR}/.lock"
 SINCEFILE="${WORKDIR}.txt"
 
 SINCE="P1D"
+USER_SINCE=""
 
 ARGS=`${GETOPT} b:r:p:c:w:l:s:o:x:h $*`
 set -- $ARGS
@@ -89,7 +90,7 @@ for i; do
 	      shift; shift ;;
 	-l  ) LOCKFILE=$2
 	      shift; shift ;;
-	-s  ) SINCE=$2
+	-s  ) SINCE=$2; USER_SINCE=$2
 	      shift; shift;;
 	--  ) shift; break ;;
     esac
@@ -101,18 +102,6 @@ then
     echo "options:"
     echo "...please write me"
     exit 0
-fi
-
-if [ "${GITHUB_ORG}" = "" ]
-then
-    GITHUB_ORG="whosonfirst-data"
-    echo "Missing GitHub organization config, assuming ${GITHUB_ORG}"
-fi
-
-if [ "${GITHUB_PREFIX}" = "" ]
-then
-    GITHUB_PREFIX="whosonfirst-data"
-    echo "Missing GitHub (repo) prefix config, assuming ${GITHUB_PREFIX}"
 fi
 
 if [ "${S3_BUCKET}" = "" ]
@@ -135,7 +124,7 @@ fi
 
 if [ -f ${LOCKFILE} ]
 then
-
+    
     # maybe test the age of LOCKFILE and continue anyway if > n ?
     # (20180823/thisisaaronland)
     
@@ -143,18 +132,25 @@ then
     exit 0
 fi
 
-if [ -f ${SINCEFILE} ]
+if [ "${USER_SINCE}" = "" ]
 then
-    SINCE=`cat ${SINCEFILE}`
-    echo "SINCE FROM SINCEFILE ${SINCE}"
-fi
+    
+    if [ -f ${SINCEFILE} ]
+    then
+	SINCE=`cat ${SINCEFILE}`
+	echo "SINCE FROM SINCEFILE ${SINCE} (${SINCEFILE})"
+    fi
 
+fi
+    
 echo `date '+%s'` > ${SINCEFILE}
 
 rm -rf ${WORKDIR}/*
 echo `date` > ${LOCKFILE}
 
 TO_PUBLISH=$@
+
+# echo "DEBUG ${LIST_REPOS} -not-forked -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX} -updated-since ${SINCE}"
 
 if [ "$#" -eq 0 ]
 then
