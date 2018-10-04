@@ -56,17 +56,22 @@ S3_REGION=""
 S3_PREFIX=""
 S3_CREDENTIALS=""
 
+USAGE=""
+
 WORKDIR="/usr/local/data/dist"
 LOCKFILE="${WORKDIR}/.lock"
 SINCEFILE="${WORKDIR}.txt"
 
 SINCE="P1D"
 
-ARGS=`${GETOPT} b:r:p:c:w:l:s:o: $*`
+ARGS=`${GETOPT} b:r:p:c:w:l:s:o:h $*`
 set -- $ARGS
 
 for i; do
     case "$i" in
+        -h  ) 
+	      USAGE=1
+	      shift; shift;;
 	-o  ) GITHUB_ORG=$2
 	      shift; shift ;;
 	-b  ) S3_BUCKET=$2
@@ -86,6 +91,14 @@ for i; do
 	--  ) shift; break ;;
     esac
 done
+
+if [ "${USAGE}" = "1" ]
+then
+    echo "usage: ./bin/wof-update-distributions -o GITHUB_ORGANIZATION -b S3_BUCKET -p S3_PREFIX -r S3_REGION -c S3_CREDENTIALS"
+    echo "options:"
+    echo "...please write me"
+    exit 0
+fi
 
 if [ "${GITHUB_ORG}" = "" ]
 then
