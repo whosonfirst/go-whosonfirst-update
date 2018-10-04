@@ -171,7 +171,7 @@ do
     
     echo "rebuild distributions for ${REPO}"
     
-    echo ${BUILD_DIST} -workdir ${WORKDIR} -timings -verbose -build-meta -build-bundle ${REPO}
+    ${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose -build-meta -build-bundle ${REPO}
 
     if [ $? -ne 0 ]
     then
