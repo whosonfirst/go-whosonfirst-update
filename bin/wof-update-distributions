@@ -48,6 +48,7 @@ do
 done
 
 GITHUB_ORG=""
+GITHUB_PREFIX=""
 
 PUBLISHER="s3"
 
@@ -64,7 +65,7 @@ SINCEFILE="${WORKDIR}.txt"
 
 SINCE="P1D"
 
-ARGS=`${GETOPT} b:r:p:c:w:l:s:o:h $*`
+ARGS=`${GETOPT} b:r:p:c:w:l:s:o:x:h $*`
 set -- $ARGS
 
 for i; do
@@ -73,6 +74,8 @@ for i; do
 	      USAGE=1
 	      shift; shift;;
 	-o  ) GITHUB_ORG=$2
+	      shift; shift ;;
+	-x  ) GITHUB_PREFIX=$2
 	      shift; shift ;;
 	-b  ) S3_BUCKET=$2
 	      shift; shift ;;
@@ -104,6 +107,12 @@ if [ "${GITHUB_ORG}" = "" ]
 then
     GITHUB_ORG="whosonfirst-data"
     echo "Missing GitHub organization config, assuming ${GITHUB_ORG}"
+fi
+
+if [ "${GITHUB_PREFIX}" = "" ]
+then
+    GITHUB_PREFIX="whosonfirst-data"
+    echo "Missing GitHub (repo) prefix config, assuming ${GITHUB_PREFIX}"
 fi
 
 if [ "${S3_BUCKET}" = "" ]
@@ -150,13 +159,13 @@ TO_PUBLISH=$@
 if [ "$#" -eq 0 ]
 then
     echo "publish all not-forked since ${SINCE}"
-    TO_PUBLISH=`${LIST_REPOS} -not-forked -updated-since ${SINCE}`
+    TO_PUBLISH=`${LIST_REPOS} -not-forked -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX} -updated-since ${SINCE}`
 fi
 
 if [ "$1" = "all" ]
 then
     echo "publish all not-forked repos"    
-    TO_PUBLISH=`${LIST_REPOS} -not-forked`
+    TO_PUBLISH=`${LIST_REPOS} -not-forked -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX} `
 fi
 
 echo "publish '${TO_PUBLISH}'"
