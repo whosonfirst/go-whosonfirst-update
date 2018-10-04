@@ -191,7 +191,7 @@ do
     
     echo "prune distributions"
 
-    echo ${PRUNE_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
+    ${PRUNE_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
 
     if [ $? -ne 0 ]
     then
@@ -201,7 +201,7 @@ do
     
     echo "index distributions"
     
-    echo ${INDEX_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
+    ${INDEX_DIST} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" whosonfirst-data
 
     if [ $? -ne 0 ]
     then
@@ -220,7 +220,7 @@ then
     BUNDLES_PREFIX="${S3_PREFIX}/bundles"
 fi
 
-echo ${INDEX_BUNDLES} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${BUNDLES_PREFIX} credentials=${S3_CREDENTIALS}"
+${INDEX_BUNDLES} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${BUNDLES_PREFIX} credentials=${S3_CREDENTIALS}"
 
 if [ $? -ne 0 ]
 then
