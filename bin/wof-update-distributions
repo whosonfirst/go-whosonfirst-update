@@ -142,8 +142,9 @@ for REPO in ${TO_PUBLISH}
 do
     
     echo "rebuild distributions for ${REPO}"
-    
-    ${BUILD_DIST} -workdir ${WORKDIR} -build-meta -build-bundle ${REPO}
+
+    # ${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose -build-meta -build-bundle ${REPO}
+    ${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose ${REPO}    
 
     if [ $? -ne 0 ]
     then
@@ -151,9 +152,6 @@ do
 	continue
     fi
 
-    echo "WTF"
-    continue
-    
     echo "publish distributions for ${REPO}"
     
     ${PUBLISH_DIST} -workdir ${WORKDIR} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" ${REPO}
