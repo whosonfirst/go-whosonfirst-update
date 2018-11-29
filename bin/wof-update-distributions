@@ -144,8 +144,9 @@ do
     echo "rebuild distributions for ${REPO}"
 
     # ${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose -build-meta -build-bundle ${REPO}
-    ${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose ${REPO}    
+    ${BUILD_DIST} -workdir ${WORKDIR} -timings -verbose -build-meta=false -build-bundle=false ${REPO}    
 
+    
     if [ $? -ne 0 ]
     then
 	echo "rebuild failed for ${REPO}"
