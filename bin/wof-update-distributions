@@ -54,6 +54,8 @@ S3_REGION=""
 S3_PREFIX=""
 S3_CREDENTIALS=""
 
+GITHUB_ORG="whosonfirst-data"
+
 WORKDIR="/usr/local/data/dist"
 LOCKFILE="${WORKDIR}/.lock"
 SINCEFILE="${WORKDIR}.txt"
@@ -77,6 +79,8 @@ for i; do
 	      shift; shift ;;
 	-l  ) LOCKFILE=$2
 	      shift; shift ;;
+	-o  ) GITHUB_ORG=$2
+	      shift; shift ;;	
 	-s  ) SINCE=$2
 	      shift; shift;;
 	--  ) shift; break ;;
@@ -143,8 +147,10 @@ do
     
     echo "rebuild distributions for ${REPO}"
 
-    # ${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose -build-meta -build-bundle ${REPO}
-    ${BUILD_DIST} -workdir ${WORKDIR} -timings -verbose -build-meta=false -build-bundle=false ${REPO}    
+    echo "${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose -build-meta -build-bundle ${REPO}"
+    
+    ${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose -build-meta -build-bundle ${REPO}
+    # ${BUILD_DIST} -workdir ${WORKDIR} -timings -verbose -build-meta=false -build-bundle=false ${REPO}    
     
     if [ $? -ne 0 ]
     then
