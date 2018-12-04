@@ -47,6 +47,9 @@ do
     
 done
 
+GITHUB_ORG="whosonfirst-data"
+GITHUB_PREFIX="whosonfirst-data"
+
 PUBLISHER="s3"
 
 S3_BUCKET=""
@@ -55,18 +58,27 @@ S3_PREFIX=""
 S3_CREDENTIALS=""
 
 GITHUB_ORG="whosonfirst-data"
+USAGE=""
 
 WORKDIR="/usr/local/data/dist"
 LOCKFILE="${WORKDIR}/.lock"
 SINCEFILE="${WORKDIR}.txt"
 
 SINCE="P1D"
+USER_SINCE=""
 
-ARGS=`${GETOPT} b:r:p:c:w:l:s: $*`
+ARGS=`${GETOPT} b:r:p:c:w:l:s:o:x:h $*`
 set -- $ARGS
 
 for i; do
     case "$i" in
+        -h  ) 
+	      USAGE=1
+	      shift;;
+	-o  ) GITHUB_ORG=$2
+	      shift; shift ;;
+	-x  ) GITHUB_PREFIX=$2
+	      shift; shift ;;
 	-b  ) S3_BUCKET=$2
 	      shift; shift ;;
 	-r  ) S3_REGION=$2
@@ -81,11 +93,19 @@ for i; do
 	      shift; shift ;;
 	-o  ) GITHUB_ORG=$2
 	      shift; shift ;;	
-	-s  ) SINCE=$2
+	-s  ) USER_SINCE=$2
 	      shift; shift;;
 	--  ) shift; break ;;
     esac
 done
+
+if [ "${USAGE}" = "1" ]
+then
+    echo "usage: ./bin/wof-update-distributions -o GITHUB_ORGANIZATION -b S3_BUCKET -p S3_PREFIX -r S3_REGION -c S3_CREDENTIALS"
+    echo "options:"
+    echo "...please write me"
+    exit 0
+fi
 
 if [ "${S3_BUCKET}" = "" ]
 then
@@ -107,7 +127,7 @@ fi
 
 if [ -f ${LOCKFILE} ]
 then
-
+    
     # maybe test the age of LOCKFILE and continue anyway if > n ?
     # (20180823/thisisaaronland)
     
@@ -115,12 +135,17 @@ then
     exit 0
 fi
 
-if [ -f ${SINCEFILE} ]
+if [ "${USER_SINCE}" = "" ]
 then
-    SINCE=`cat ${SINCEFILE}`
-    echo "SINCE FROM SINCEFILE ${SINCE}"
-fi
+    
+    if [ -f ${SINCEFILE} ]
+    then
+	SINCE=`cat ${SINCEFILE}`
+	echo "SINCE FROM SINCEFILE ${SINCE} (${SINCEFILE})"
+    fi
 
+fi
+    
 echo `date '+%s'` > ${SINCEFILE}
 
 rm -rf ${WORKDIR}/*
@@ -128,16 +153,18 @@ echo `date` > ${LOCKFILE}
 
 TO_PUBLISH=$@
 
+# echo "DEBUG ${LIST_REPOS} -not-forked -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX} -updated-since ${SINCE}"
+
 if [ "$#" -eq 0 ]
 then
     echo "publish all not-forked since ${SINCE}"
-    TO_PUBLISH=`${LIST_REPOS} -not-forked -updated-since ${SINCE}`
+    TO_PUBLISH=`${LIST_REPOS} -not-forked -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX} -updated-since ${SINCE}`
 fi
 
 if [ "$1" = "all" ]
 then
     echo "publish all not-forked repos"    
-    TO_PUBLISH=`${LIST_REPOS} -not-forked`
+    TO_PUBLISH=`${LIST_REPOS} -not-forked -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX} `
 fi
 
 echo "publish '${TO_PUBLISH}'"
@@ -146,12 +173,12 @@ for REPO in ${TO_PUBLISH}
 do
     
     echo "rebuild distributions for ${REPO}"
-
+    
     # see also https://github.com/whosonfirst/go-whosonfirst-dist/commit/2082a1fd03c69de66923fb1254b03fcfb31ea930 wrt/ not building bundles
     # echo "${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose -build-meta=false -build-bundle=false ${REPO}"
     
     ${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose -build-meta=false -build-bundle=false ${REPO}
-    
+
     if [ $? -ne 0 ]
     then
 	echo "rebuild failed for ${REPO}"
