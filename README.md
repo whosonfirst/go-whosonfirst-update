@@ -27,3 +27,4 @@ Note: This tool lacks any kind of usage documentation.
 * https://github.com/whosonfirst/go-whosonfirst-github
 * https://github.com/whosonfirst/go-whosonfirst-dist
 * https://github.com/whosonfirst/go-whosonfirst-dist-publish
+* https://github.com/whosonfirst/go-whosonfirst-s3
