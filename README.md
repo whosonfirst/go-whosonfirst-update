@@ -6,6 +6,10 @@ This is work in progress. You should not expect it to work yet.
 
 ## bin
 
+### wof-sync-files
+
+Too soon. It works but it's also being actively worked on.
+
 ### wof-update-distributions
 
 ```

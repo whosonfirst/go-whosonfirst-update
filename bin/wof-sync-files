@@ -1,0 +1,201 @@
+#!/bin/sh
+
+# TBD: how to integrate this with wof-update-distributions (20181205/thisisaaronland)
+# TBD: incremental updates (20181205/thisisaaronland)
+
+# sync entire repos from master (rather than increment since-commit-x updates)
+
+# for example:
+# /usr/local/whosonfirst/go-whosonfirst-update/bin/wof-sync-files -b data.whosonfirst.org -r us-east-2 -c iam:
+
+# would it be easiest just to fold all of this in to a single Go binary that uses
+# all the same code as the `wof-do-something` tools below? maybe...
+
+OS=`uname -s | tr '[:upper:]' '[:lower:]'`
+
+GIT=`which git`
+PYTHON=`which python`
+GETOPT=`which getopt`
+
+for TOOL in $GIT $PYTHON $GETOPT
+do
+
+    if [ ! -x ${TOOL} ]
+    then
+	echo "Missing tool: '${TOOL}'"
+	exit 1
+    fi
+    
+done
+
+WHOAMI=`${PYTHON} -c 'import os, sys; print os.path.realpath(sys.argv[1])' $0`
+
+BIN=`dirname ${WHOAMI}`
+ROOT=`dirname ${BIN}`
+
+UTILS="${ROOT}/utils/${OS}"
+
+LIST_REPOS="${UTILS}/wof-list-repos"
+S3_SYNC="${UTILS}/wof-s3-sync"
+ES_INDEXER=`which wof-es-index`
+
+for TOOL in $LIST_REPOS $S3_SYNC $ES_INDEX
+do
+
+    if [ ! -x ${TOOL} ]
+    then
+	echo "Missing tool: '${TOOL}'"
+	exit 1
+    fi
+    
+done
+
+GITHUB_ORG="whosonfirst-data"
+GITHUB_PREFIX="whosonfirst-data"
+
+S3_BUCKET=""
+S3_REGION=""
+S3_PREFIX=""
+S3_CREDENTIALS=""
+
+ES_HOST="localhost"
+ES_PORT=9200
+ES_INDEX="spelunker"
+ES_TIMEOUT=1200
+
+USAGE=""
+
+WORKDIR="/usr/local/data/work2"
+LOCKFILE="${WORKDIR}/.lock"
+SINCEFILE="${WORKDIR}/.since"
+
+SINCE="P1D"
+USER_SINCE=""
+
+# TODO: custom ES flags (20181026/thisisaaronland)
+
+ARGS=`${GETOPT} b:r:p:c:w:l:s:o:x:h $*`
+set -- $ARGS
+
+for i; do
+    case "$i" in
+        -h  ) 
+	      USAGE=1
+	      shift; shift;;
+	-o  ) GITHUB_ORG=$2
+	      shift; shift ;;
+	-x  ) GITHUB_PREFIX=$2
+	      shift; shift ;;
+	-b  ) S3_BUCKET=$2
+	      shift; shift ;;
+	-r  ) S3_REGION=$2
+	      shift; shift  ;;
+	-p  ) S3_PREFIX=$2
+	      shift; shift ;;
+	-c  ) S3_CREDENTIALS=$2
+	      shift; shift ;;
+	-w  ) WORKDIR=$2
+	      shift; shift ;;
+	-l  ) LOCKFILE=$2
+	      shift; shift ;;
+	-s  ) SINCE=$2; USER_SINCE=$2
+	      shift; shift;;
+	--  ) shift; break ;;
+    esac
+done
+
+if [ "${USAGE}" = "1" ]
+then
+    echo "usage: ./bin/wof-sync-files -o GITHUB_ORGANIZATION -b S3_BUCKET -p S3_PREFIX -r S3_REGION -c S3_CREDENTIALS"
+    echo "options:"
+    echo "...please write me"
+    exit 0
+fi
+
+if [ "${S3_BUCKET}" = "" ]
+then
+    echo "Missing S3 bucket config"
+    exit 1
+fi
+
+if [ "${S3_REGION}" = "" ]
+then
+    echo "Missing S3 region"
+    exit 1
+fi
+
+if [ "${S3_CREDENTIALS}" = "" ]
+then
+    echo "Missing S3 credentials"
+    exit 1
+fi
+
+if [ "${S3_PREFIX}" = "" ]
+then
+    S3_PREFIX="''"
+fi
+
+if [ -f ${LOCKFILE} ]
+then
+    
+    # maybe test the age of LOCKFILE and continue anyway if > n ?
+    # (20180823/thisisaaronland)
+    
+    echo "lockfile '${LOCKFILE}' is present, exiting"
+    exit 0
+fi
+
+# if [ "${USER_SINCE}" = "" ]
+# then
+#     
+#     if [ -f ${SINCEFILE} ]
+#    then
+#	SINCE=`cat ${SINCEFILE}`
+#	echo "SINCE FROM SINCEFILE ${SINCE} (${SINCEFILE})"
+#    fi
+#
+# fi
+    
+echo `date '+%s'` > ${SINCEFILE}
+echo `date` > ${LOCKFILE}
+
+TO_PUBLISH=$@
+
+# echo "DEBUG ${LIST_REPOS} -not-forked -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX} -updated-since ${SINCE}"
+
+if [ "$#" -eq 0 ]
+then
+    echo "publish all not-forked since ${SINCE}"
+    TO_PUBLISH=`${LIST_REPOS} -not-forked -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX} -updated-since ${SINCE}`
+fi
+
+if [ "$1" = "all" ]
+then
+    echo "publish all not-forked repos"    
+    TO_PUBLISH=`${LIST_REPOS} -not-forked -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX} `
+fi
+
+echo "publish '${TO_PUBLISH}'"
+
+for REPO in ${TO_PUBLISH}
+do
+    
+    echo "clone distributions for ${REPO}"
+
+    PATH_REPO="${WORKDIR}/${REPO}"
+
+    echo ${GIT} lfs clone --depth 1 https://github.com/${GITHUB_ORG}/${REPO}.git ${PATH_REPO}
+    ${GIT} lfs clone --depth 1 https://github.com/${GITHUB_ORG}/${REPO}.git ${PATH_REPO}
+    
+    echo "WTF: ${ES_INDEXER} --host ${ES_HOST} --port ${ES_PORT} --index ${ES_INDEX} --bulk --mode repo ${PATH_REPO}"
+    ${ES_INDEXER} --host ${ES_HOST} --port ${ES_PORT} --index ${ES_INDEX} --bulk --mode repo ${PATH_REPO}    
+    
+    echo ${S3_SYNC} -bucket ${S3_BUCKET} -region ${S3_REGION} -prefix ${S3_PREFIX} -credentials ${S3_CREDENTIALS} -mode repo ${PATH_REPO}
+    ${S3_SYNC} -bucket ${S3_BUCKET} -region ${S3_REGION} -prefix ${S3_PREFIX} -credentials ${S3_CREDENTIALS} -mode repo ${PATH_REPO}
+    
+    # rm -rf ${PATH_REPO}
+    
+done
+
+rm -rf ${LOCKFILE}
+exit 0
