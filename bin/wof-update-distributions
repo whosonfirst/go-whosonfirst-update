@@ -185,6 +185,13 @@ do
 	continue
     fi
 
+    # publish distributions for whosonfirst-data-admin-ai
+    # 2019/07/15 21:15:34 open /usr/local/data/dist/whosonfirst-data-admin-ai-inventory.json: no such file or directory
+    # publish failed for whosonfirst-data-admin-ai
+    # rebuild distributions for whosonfirst-data-admin-al
+    # /usr/local/data/whosonfirst/go-whosonfirst-update/utils/linux/wof-dist-build -git-organization whosonfirst-data -workdir /usr/local/data/dist -timings -verbose -build-meta=false -build-bundle=false whosonfirst-data-admin-al
+    # 21:15:35.729415 [wof-dist-build] STATUS time to clone whosonfirst-data-admin-al 1.19199751s
+    
     echo "publish distributions for ${REPO}"
     
     ${PUBLISH_DIST} -workdir ${WORKDIR} -publisher ${PUBLISHER} -publisher-dsn "bucket=${S3_BUCKET} region=${S3_REGION} prefix=${S3_PREFIX} credentials=${S3_CREDENTIALS}" ${REPO}
