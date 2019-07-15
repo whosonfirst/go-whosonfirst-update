@@ -174,12 +174,8 @@ do
     
     echo "rebuild distributions for ${REPO}"
 
-    # WHAT WHAT WHAT
-    # /usr/local/data/whosonfirst/go-whosonfirst-update/utils/linux/wof-dist-build -git-organization whosonfirst-data -workdir /usr/local/data/dist -timings -verbose -build-meta=false -build-bundle=false whosonfirst-data-admin-ca
-    
     # see also https://github.com/whosonfirst/go-whosonfirst-dist/commit/2082a1fd03c69de66923fb1254b03fcfb31ea930 wrt/ not building bundles
     echo "${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose -build-meta=false -build-bundle=false ${REPO}"
-    continue
     
     ${BUILD_DIST} -git-organization ${GITHUB_ORG} -workdir ${WORKDIR} -timings -verbose -build-meta=false -build-bundle=false ${REPO}
 
