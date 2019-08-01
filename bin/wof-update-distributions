@@ -143,7 +143,8 @@ then
 	SINCE=`cat ${SINCEFILE}`
 	echo "SINCE FROM SINCEFILE ${SINCE} (${SINCEFILE})"
     fi
-
+else
+    SINCE=${USER_SINCE}
 fi
     
 echo `date '+%s'` > ${SINCEFILE}
